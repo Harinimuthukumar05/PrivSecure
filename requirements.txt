@@ -1,0 +1,32 @@
+# Web server
+Flask
+flask-cors
+gunicorn
+
+# OCR
+paddlepaddle==2.6.2
+paddleocr==2.7.3
+
+# LLM
+groq
+
+# Image processing
+opencv-python-headless
+Pillow
+numpy==1.26.4
+
+# PDF
+PyMuPDF
+pdf2image
+
+# OCR fallback
+pytesseract
+
+# Aadhaar validation
+verhoeff
+
+# Firebase
+firebase-admin
+
+# Environment variables
+python-dotenv

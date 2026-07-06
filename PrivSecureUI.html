@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrivSecure — AI-Powered ID Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --bg2: #ffffff;
+  --bg3: #f0eee9;
+  --surface: #ffffff;
+  --surface2: #f4f3f0;
+  --border: rgba(0,0,0,0.09);
+  --border2: rgba(0,0,0,0.15);
+  --text: #1a1917;
+  --text2: #5c5b57;
+  --text3: #9c9b96;
+  --accent: #7C3AED;
+  --accent2: #6D28D9;
+  --accent-bg: #F5F3FF;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --purple: #7C3AED;
+  --purple-bg: #F5F3FF;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="dark"] {
+  --bg: #111110;
+  --bg2: #1a1917;
+  --bg3: #0d0d0c;
+  --surface: #1e1d1b;
+  --surface2: #252422;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8;
+  --text2: #a09d96;
+  --text3: #5c5b57;
+  --accent: #A78BFA;
+  --accent2: #C4B5FD;
+  --accent-bg: #2E1A4E;
+  --green: #4ade80;
+  --green-bg: #0f2d1a;
+  --red: #f87171;
+  --red-bg: #2d1212;
+  --purple: #A78BFA;
+  --purple-bg: #2E1A4E;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 15px;
+  transition: background var(--transition), color var(--transition);
+}
+a { color: var(--accent); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input { font-family: inherit; outline: none; border: none; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+/* ── NAVBAR ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0 clamp(1rem, 5vw, 3rem);
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(12px);
+  transition: background var(--transition), border-color var(--transition);
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 17px; font-weight: 600; color: var(--text);
+  letter-spacing: -0.3px;
+}
+.nav-logo-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.nav-logo-icon img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  font-size: 13.5px; color: var(--text2); font-weight: 500;
+  transition: background var(--transition), color var(--transition);
+}
+.nav-links a:hover { background: var(--surface2); color: var(--text); }
+
+.theme-toggle {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); transition: all var(--transition);
+}
+.theme-toggle:hover { background: var(--surface); color: var(--text); }
+.theme-toggle svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* ── HERO ── */
+.hero {
+  padding: clamp(4rem, 10vw, 7rem) clamp(1rem, 5vw, 3rem) clamp(3rem, 7vw, 5rem);
+  text-align: center; max-width: 820px; margin: 0 auto;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--accent-bg); color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 99px; padding: 5px 14px; font-size: 12.5px; font-weight: 500;
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.5s ease both;
+}
+.hero-badge-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  animation: pulse 1.8s ease infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.75); } }
+h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 600; line-height: 1.15; letter-spacing: -0.04em;
+  color: var(--text); margin-bottom: 1.2rem;
+  animation: fadeInUp 0.55s 0.1s ease both;
+}
+.hero-gradient { background: linear-gradient(135deg, #7C3AED, #A78BFA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero-desc {
+  font-size: 16.5px; color: var(--text2); max-width: 520px; margin: 0 auto 2.2rem;
+  line-height: 1.7;
+  animation: fadeInUp 0.55s 0.2s ease both;
+}
+.hero-cta {
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+  animation: fadeInUp 0.55s 0.3s ease both;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 500;
+  transition: all var(--transition);
+}
+.btn-primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 1px 2px rgba(37,99,235,0.3), 0 4px 12px rgba(37,99,235,0.2);
+}
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(37,99,235,0.35), 0 6px 16px rgba(37,99,235,0.25); }
+.btn-primary:active { transform: translateY(0); }
+.btn-secondary {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border2);
+  box-shadow: var(--shadow);
+}
+.btn-secondary:hover { background: var(--surface2); transform: translateY(-1px); }
+.btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── MAIN CONTENT ── */
+main {
+  max-width: 820px; margin: 0 auto;
+  padding: 0 clamp(1rem, 5vw, 2rem) 4rem;
+  display: flex; flex-direction: column; gap: 2rem;
+}
+
+/* ── SECTION CARDS ── */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  animation: fadeInUp 0.5s ease both;
+}
+.section-card:hover { border-color: var(--border2); box-shadow: var(--shadow-md); }
+.section-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.section-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.section-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.icon-blue { background: var(--accent-bg); color: var(--accent); }
+.icon-purple { background: var(--purple-bg); color: var(--purple); }
+.icon-green { background: var(--green-bg); color: var(--green); }
+.icon-amber { background: var(--amber-bg); color: var(--amber); }
+.section-title { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; }
+.section-subtitle { font-size: 13px; color: var(--text3); margin-top: 2px; }
+.section-body { padding: 24px; }
+
+/* ── UPLOAD ── */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.upload-zone.drag-over { transform: scale(1.01); }
+.upload-icon {
+  width: 48px; height: 48px; margin: 0 auto 14px;
+  background: var(--surface2); border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.upload-zone:hover .upload-icon { background: var(--accent-bg); }
+.upload-icon svg { width: 22px; height: 22px; stroke: var(--text3); fill: none; stroke-width: 2; stroke-linecap: round; transition: stroke var(--transition); }
+.upload-zone:hover .upload-icon svg { stroke: var(--accent); }
+.upload-title { font-size: 14.5px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
+.upload-sub { font-size: 12.5px; color: var(--text3); }
+.upload-sub span { color: var(--accent); font-weight: 500; cursor: pointer; }
+.upload-sub span:hover { text-decoration: underline; }
+.format-pills { display: flex; gap: 6px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+.pill {
+  font-size: 11.5px; font-weight: 500; padding: 3px 10px;
+  border-radius: 99px; border: 1px solid var(--border2);
+  color: var(--text2); background: var(--surface);
+  letter-spacing: 0.3px;
+}
+#fileInput { display: none; }
+
+/* Progress */
+.progress-wrap { margin-top: 16px; display: none; }
+.progress-wrap.show { display: block; }
+.progress-label { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text2); margin-bottom: 6px; }
+.progress-bar { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; width: 0%; }
+
+/* File preview */
+.file-preview { margin-top: 16px; display: none; }
+.file-preview.show { display: block; }
+.file-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.file-item-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.file-item-icon.pdf { background: #fef2f2; }
+.file-item-icon.img { background: #f0fdf4; }
+.file-item-icon svg { width: 18px; height: 18px; stroke-width: 2; stroke-linecap: round; fill: none; }
+.file-item-icon.pdf svg { stroke: #dc2626; }
+.file-item-icon.img svg { stroke: #16a34a; }
+.file-item-info { flex: 1; min-width: 0; }
+.file-item-name { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-item-size { font-size: 12px; color: var(--text3); }
+.file-item-status { font-size: 12px; font-weight: 500; }
+.status-done { color: var(--green); }
+.status-processing { color: var(--amber); }
+
+/* ── OCR RESULT ── */
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+@media (max-width: 560px) { .result-grid { grid-template-columns: 1fr; } }
+.result-field {
+  padding: 12px 14px; background: var(--surface2);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  transition: border-color var(--transition);
+}
+.result-field:hover { border-color: var(--border2); }
+.result-field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 500; margin-bottom: 4px; }
+.result-field-value { font-size: 14px; font-weight: 500; color: var(--text); word-break: break-all; }
+
+.id-type-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 99px;
+  font-size: 12.5px; font-weight: 600;
+  letter-spacing: 0.2px; margin-bottom: 18px;
+}
+.id-type-badge.aadhaar { background: var(--accent-bg); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+.id-type-badge.pan { background: var(--amber-bg); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); }
+.id-type-badge.dl { background: var(--green-bg); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 25%, transparent); }
+.id-type-badge.voter { background: var(--purple-bg); color: var(--purple); border: 1px solid color-mix(in srgb, var(--purple) 25%, transparent); }
+.id-type-badge.college { background: var(--amber-bg); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); }
+.id-type-badge.other { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+
+.confidence-bar-wrap { margin-bottom: 20px; }
+.confidence-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); margin-bottom: 7px; }
+.confidence-label strong { color: var(--green); }
+.confidence-bar { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.confidence-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--green), #4ade80); transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+
+.json-block {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px;
+  font-family: 'DM Mono', monospace; font-size: 12.5px;
+  color: var(--text2); line-height: 1.6; overflow-x: auto;
+  max-height: 240px; overflow-y: auto;
+}
+.json-key { color: var(--accent); }
+.json-string { color: var(--green); }
+.json-null { color: var(--text3); }
+.json-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-sm {
+  padding: 7px 14px; font-size: 12.5px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border2); background: var(--surface2); color: var(--text2);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all var(--transition); font-weight: 500;
+}
+.btn-sm:hover { background: var(--surface); color: var(--text); border-color: var(--border2); }
+.btn-sm svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* ── REDACTION ── */
+.redaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+@media (max-width: 560px) { .redaction-grid { grid-template-columns: 1fr; } }
+.doc-preview {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; min-height: 200px; background: var(--bg);
+  position: relative;
+}
+.doc-preview-header {
+  padding: 10px 14px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  display: flex; align-items: center; gap: 6px;
+}
+.doc-preview-header svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.doc-preview-body { padding: 16px; font-size: 11.5px; color: var(--text); line-height: 1.8; }
+.redacted {
+  display: inline-block; background: var(--text); color: transparent;
+  border-radius: 2px; user-select: none;
+  padding: 0 4px; margin: 0 1px;
+}
+.highlight-sensitive { background: #fef9c3; color: #713f12; border-radius: 2px; padding: 0 3px; }
+[data-theme="dark"] .highlight-sensitive { background: #422006; color: #fcd34d; }
+.redaction-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+.legend-dot.original { background: #fef9c3; border: 1px solid #fde68a; }
+.legend-dot.redacted-dot { background: var(--text); }
+[data-theme="dark"] .legend-dot.original { background: #422006; border-color: #78350f; }
+
+/* ── VERIFICATION ── */
+.verify-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.verify-input {
+  flex: 1; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border2);
+  font-size: 13.5px; color: var(--text); font-family: 'DM Mono', monospace;
+  transition: border-color var(--transition), background var(--transition);
+}
+.verify-input:focus { border-color: var(--accent); background: var(--surface); }
+.verify-input::placeholder { color: var(--text3); font-family: 'DM Sans', sans-serif; }
+.verify-btn {
+  padding: 11px 20px; border-radius: var(--radius-sm);
+  background: var(--accent); color: white; font-size: 13.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  transition: all var(--transition);
+  box-shadow: 0 1px 2px rgba(37,99,235,0.25);
+}
+.verify-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+.verify-btn:active { transform: translateY(0); }
+.verify-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+.verify-result {
+  border-radius: var(--radius-sm); padding: 16px 18px;
+  display: none; margin-top: 4px;
+  border: 1px solid; animation: fadeInUp 0.3s ease both;
+}
+.verify-result.show { display: flex; align-items: center; gap: 14px; }
+.verify-result.verified { background: var(--green-bg); border-color: color-mix(in srgb, var(--green) 25%, transparent); }
+.verify-result.not-verified { background: var(--red-bg); border-color: color-mix(in srgb, var(--red) 25%, transparent); }
+.verify-status-icon {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.verify-result.verified .verify-status-icon { background: color-mix(in srgb, var(--green) 20%, transparent); }
+.verify-result.not-verified .verify-status-icon { background: color-mix(in srgb, var(--red) 20%, transparent); }
+.verify-status-icon svg { width: 20px; height: 20px; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+.verify-result.verified .verify-status-icon svg { stroke: var(--green); }
+.verify-result.not-verified .verify-status-icon svg { stroke: var(--red); }
+.verify-result-title { font-size: 14.5px; font-weight: 600; }
+.verify-result.verified .verify-result-title { color: var(--green); }
+.verify-result.not-verified .verify-result-title { color: var(--red); }
+.verify-result-sub { font-size: 12.5px; color: var(--text2); margin-top: 2px; }
+
+/* ── LOADER ── */
+.spinner-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+}
+.spinner-overlay.show { display: flex; }
+.spinner-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px 40px;
+  text-align: center; box-shadow: var(--shadow-md); min-width: 220px;
+}
+.spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-text { font-size: 14px; color: var(--text2); font-weight: 500; }
+
+/* ── TOAST ── */
+.toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  box-shadow: var(--shadow-md); font-size: 13.5px; color: var(--text);
+  display: flex; align-items: center; gap: 10px; min-width: 240px;
+  animation: slideIn 0.3s ease both;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+.toast svg { width: 16px; height: 16px; stroke-width: 2.5; stroke-linecap: round; fill: none; flex-shrink: 0; }
+.toast.success svg { stroke: var(--green); }
+.toast.error svg { stroke: var(--red); }
+.toast.info svg { stroke: var(--accent); }
+
+/* ── HIDDEN ── */
+.hidden { display: none !important; }
+
+/* ── STATS ROW ── */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+@media (max-width: 480px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  padding: 14px 16px; background: var(--surface2); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); text-align: center;
+}
+.stat-value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; color: var(--accent); }
+.stat-label { font-size: 11.5px; color: var(--text3); margin-top: 2px; font-weight: 500; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px clamp(1rem, 5vw, 3rem);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;
+  font-size: 13px; color: var(--text3); gap: 12px;
+}
+.footer-logo { font-weight: 600; color: var(--text2); font-size: 14px; }
+.footer-links { display: flex; gap: 16px; }
+.footer-links a { color: var(--text3); transition: color var(--transition); }
+.footer-links a:hover { color: var(--text); }
+
+/* ── RETRIEVE SECTION ── */
+.retrieve-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.retrieve-input {
+  flex: 1; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: var(--surface2); border: 1px solid var(--border2);
+  font-size: 13.5px; color: var(--text); font-family: 'DM Mono', monospace;
+  transition: border-color var(--transition), background var(--transition);
+}
+.retrieve-input:focus { border-color: var(--accent); background: var(--surface); }
+.retrieve-input::placeholder { color: var(--text3); font-family: 'DM Sans', sans-serif; }
+.retrieve-btn {
+  padding: 11px 20px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #7C3AED, #6D28D9); color: white;
+  font-size: 13.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  transition: all var(--transition);
+  box-shadow: 0 1px 3px rgba(109,40,217,0.3), 0 4px 12px rgba(109,40,217,0.15);
+}
+.retrieve-btn:hover { background: linear-gradient(135deg, #6D28D9, #5B21B6); transform: translateY(-1px); box-shadow: 0 2px 6px rgba(109,40,217,0.35), 0 6px 16px rgba(109,40,217,0.2); }
+.retrieve-btn:active { transform: translateY(0); }
+.retrieve-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+/* Retrieve result container */
+.retrieve-result-box {
+  display: none; margin-top: 12px;
+  animation: fadeInUp 0.35s ease both;
+}
+.retrieve-result-box.show { display: block; }
+
+/* Status banner (found / not-found / error) */
+.retrieve-banner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: var(--radius-sm);
+  border: 1px solid; margin-bottom: 14px;
+}
+.retrieve-banner.found { background: var(--green-bg); border-color: color-mix(in srgb, var(--green) 25%, transparent); }
+.retrieve-banner.not-found { background: var(--red-bg); border-color: color-mix(in srgb, var(--red) 25%, transparent); }
+.retrieve-banner.error { background: var(--surface2); border-color: var(--border2); }
+.retrieve-banner-icon {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.retrieve-banner.found .retrieve-banner-icon { background: color-mix(in srgb, var(--green) 18%, transparent); }
+.retrieve-banner.not-found .retrieve-banner-icon { background: color-mix(in srgb, var(--red) 18%, transparent); }
+.retrieve-banner.error .retrieve-banner-icon { background: var(--surface2); }
+.retrieve-banner-icon svg { width: 18px; height: 18px; stroke-width: 2.5; stroke-linecap: round; fill: none; }
+.retrieve-banner.found .retrieve-banner-icon svg { stroke: var(--green); }
+.retrieve-banner.not-found .retrieve-banner-icon svg { stroke: var(--red); }
+.retrieve-banner.error .retrieve-banner-icon svg { stroke: var(--text3); }
+.retrieve-banner-title { font-size: 14.5px; font-weight: 600; }
+.retrieve-banner.found .retrieve-banner-title { color: var(--green); }
+.retrieve-banner.not-found .retrieve-banner-title { color: var(--red); }
+.retrieve-banner.error .retrieve-banner-title { color: var(--text2); }
+.retrieve-banner-sub { font-size: 12.5px; color: var(--text2); margin-top: 2px; }
+
+/* Retrieved data cards */
+.retrieve-data-panel {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 12px;
+}
+.retrieve-data-panel-header {
+  padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.7px;
+}
+.retrieve-data-panel-header svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.retrieve-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+@media (max-width: 560px) { .retrieve-data-grid { grid-template-columns: 1fr; } }
+.retrieve-field {
+  padding: 10px 12px; background: var(--surface); border-radius: 6px; border: 1px solid var(--border);
+}
+.retrieve-field-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 500; margin-bottom: 3px; }
+.retrieve-field-value { font-size: 13.5px; font-weight: 500; color: var(--text); word-break: break-all; }
+
+/* Ledger block display */
+.ledger-block {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.ledger-block-header {
+  padding: 10px 14px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ledger-block-title { font-size: 12px; font-weight: 600; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.ledger-block-title svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.ledger-chain-badge {
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+  background: var(--green-bg); color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 25%, transparent);
+}
+.ledger-chain-badge.broken { background: var(--red-bg); color: var(--red); border-color: color-mix(in srgb, var(--red) 25%, transparent); }
+.ledger-rows { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ledger-row { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; }
+.ledger-row-key { color: var(--text3); font-weight: 500; min-width: 110px; flex-shrink: 0; }
+.ledger-row-val { color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11.5px; word-break: break-all; }
+.ledger-row-val.green { color: var(--green); font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 600; }
+
+/* id-type badge reuse in retrieve */
+.retrieve-id-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 12px; border-radius: 99px;
+  font-size: 12px; font-weight: 600;
+  background: var(--accent-bg); color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  margin-bottom: 10px;
+}
+
+/* ── CREDENTIALS WARNING BOX ── */
+.credentials-warning {
+  display: none; margin-top: 18px;
+  border: 1.5px solid #f59e0b;
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeInUp 0.4s ease both;
+}
+.credentials-warning.show { display: block; }
+.credentials-warning-header {
+  padding: 13px 18px;
+  background: #fef3c7;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid #fde68a;
+}
+[data-theme="dark"] .credentials-warning-header {
+  background: #451a03; border-bottom-color: #78350f;
+}
+.credentials-warning-header svg {
+  width: 20px; height: 20px; stroke: #b45309; fill: none;
+  stroke-width: 2; stroke-linecap: round; flex-shrink: 0;
+}
+[data-theme="dark"] .credentials-warning-header svg { stroke: #fcd34d; }
+.credentials-warning-title {
+  font-size: 14px; font-weight: 600; color: #92400e;
+}
+[data-theme="dark"] .credentials-warning-title { color: #fcd34d; }
+.credentials-warning-body {
+  padding: 16px 18px; background: #fffbeb;
+  display: flex; flex-direction: column; gap: 12px;
+}
+[data-theme="dark"] .credentials-warning-body { background: #1c0a00; }
+.credentials-warning-msg {
+  font-size: 13px; color: #78350f; line-height: 1.6;
+}
+[data-theme="dark"] .credentials-warning-msg { color: #fcd34d; }
+.credential-row {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.credential-row-label {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text3); font-weight: 600; min-width: 80px; flex-shrink: 0;
+}
+.credential-row-value {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600;
+  color: var(--text); flex: 1; word-break: break-all;
+}
+.credential-row-value.public { color: var(--accent); }
+.credential-row-value.private { color: #b45309; }
+[data-theme="dark"] .credential-row-value.private { color: #fcd34d; }
+.credential-copy-btn {
+  padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border2); background: var(--surface); color: var(--text2);
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all var(--transition); flex-shrink: 0;
+}
+.credential-copy-btn:hover { background: var(--surface2); color: var(--text); }
+.credential-copy-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.credentials-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+}
+/* Tamper detection styling in verify section */
+.verify-result.tamper {
+  background: var(--red-bg); border-color: color-mix(in srgb, var(--red) 25%, transparent);
+}
+.verify-result.tamper .verify-status-icon { background: color-mix(in srgb, var(--red) 20%, transparent); }
+.verify-result.tamper .verify-status-icon svg { stroke: var(--red); }
+.verify-result.tamper .verify-result-title { color: var(--red); }
+/* Verify section extra info */
+.verify-meta-row {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+}
+.verify-meta-badge {
+  font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 99px;
+  background: var(--surface2); color: var(--text2);
+  border: 1px solid var(--border);
+}
+.verify-meta-badge.ok { background: var(--green-bg); color: var(--green); border-color: color-mix(in srgb, var(--green) 25%, transparent); }
+.verify-meta-badge.warn { background: var(--red-bg); color: var(--red); border-color: color-mix(in srgb, var(--red) 25%, transparent); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  h1 { font-size: 2rem; }
+}
+@media (max-width: 420px) {
+  .verify-input-row { flex-direction: column; }
+  .retrieve-input-row { flex-direction: column; }
+  footer { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">
+      <img src="./PrivSecure_Logo.jpeg" alt="PrivSecure Logo" title="PrivSecure - AI-Powered ID Verification" style="display: block; width: 40px; height: 40px; object-fit: contain;">
+    </div>
+    PrivSecure
+  </div>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="#upload">Upload</a>
+      <a href="#ocr-section">Extract</a>
+      <a href="#redact-section">Redact</a>
+      <a href="#verify-section">Verify</a>
+      <a href="#retrieve-section">Retrieve</a>
+    </div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark mode">
+      <svg id="sunIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="moonIcon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    AI-Powered · Blockchain Verified · Privacy First
+  </div>
+  <h1>Smart ID Verification<br>for <span class="hero-gradient">Modern India</span></h1>
+  <p class="hero-desc">Extract, redact, and verify Indian identity documents with enterprise-grade AI. Aadhaar, PAN, Driving License — processed securely with blockchain-backed audit trails.</p>
+  <div class="hero-cta">
+    <button class="btn btn-primary" onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload Document
+    </button>
+    <button class="btn btn-secondary" onclick="document.getElementById('verify-section').scrollIntoView({behavior:'smooth'})">
+      <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5 4.5-1.35 8-6.25 8-11.5V6L12 2z"/></svg>
+      Verify Hash
+    </button>
+  </div>
+</section>
+
+<!-- MAIN -->
+<main>
+
+  <!-- STATS -->
+  <div class="stats-row" style="animation: fadeInUp 0.5s 0.2s ease both;">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-docs">0</div>
+      <div class="stat-label">Documents Processed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-fields">—</div>
+      <div class="stat-label">Fields Extracted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-acc">—</div>
+      <div class="stat-label">Confidence Score</div>
+    </div>
+  </div>
+
+  <!-- UPLOAD SECTION -->
+  <div class="section-card" id="upload" style="animation-delay: 0.25s">
+    <div class="section-header">
+      <div class="section-icon icon-blue">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div>
+        <div class="section-title">Document Upload</div>
+        <div class="section-subtitle">Drag & drop or browse to upload your ID</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Drop your ID document here</div>
+        <div class="upload-sub">or <span onclick="document.getElementById('fileInput').click()">browse files</span> from your device</div>
+        <div class="format-pills">
+          <span class="pill">JPG</span>
+          <span class="pill">PNG</span>
+          <span class="pill">PDF</span>
+          <span class="pill">WEBP</span>
+        </div>
+        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf,.webp" multiple>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label">
+          <span id="progressLabel">Uploading...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="file-preview" id="filePreview"></div>
+
+      <!-- ── CREDENTIALS WARNING BOX (shown after successful extraction) ── -->
+      <div class="credentials-warning" id="credentialsWarning">
+        <div class="credentials-warning-header">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="credentials-warning-title">⚠️ Save Your Credentials — Shown Once</div>
+        </div>
+        <div class="credentials-warning-body">
+          <div class="credentials-warning-msg">
+            <strong>Do NOT share your Access Key with anyone.</strong> This key is required to securely retrieve your stored document data. The Access Key is shown only once and cannot be recovered.<br>
+            Your Verification ID is safe to share publicly for authenticity checks.
+          </div>
+
+          <!-- Public Verification ID -->
+          <div class="credential-row">
+            <div class="credential-row-label">Verify ID</div>
+            <div class="credential-row-value public" id="credVerifyId">—</div>
+            <button class="credential-copy-btn" onclick="copyCredential('credVerifyId', this)" title="Copy Verification ID">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+
+          <!-- Private Access Key -->
+          <div class="credential-row">
+            <div class="credential-row-label">Access Key</div>
+            <div class="credential-row-value private" id="credAccessKey">—</div>
+            <button class="credential-copy-btn" onclick="copyCredential('credAccessKey', this)" title="Copy Access Key">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+
+          <div class="credentials-actions">
+            <button class="btn-sm" onclick="downloadCredentials()" style="border-color:var(--border2);">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Credentials
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OCR RESULT SECTION -->
+  <div class="section-card hidden" id="ocr-section" style="animation-delay: 0.3s">
+    <div class="section-header">
+      <div class="section-icon icon-purple">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <div class="section-title">Extraction Results</div>
+        <div class="section-subtitle">AI-detected fields from your document</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div id="idTypeBadge"></div>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-label">
+          <span>OCR Confidence</span>
+          <strong id="confValue">—</strong>
+        </div>
+        <div class="confidence-bar"><div class="confidence-fill" id="confFill" style="width:0%"></div></div>
+      </div>
+      <div class="result-grid" id="resultGrid"></div>
+      <div style="margin-top: 4px;">
+        <div style="font-size: 12px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;">Raw JSON Output</div>
+        <div class="json-block" id="jsonBlock"></div>
+        <div class="json-actions">
+          <button class="btn-sm" id="copyJsonBtn" onclick="copyJson()">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy JSON
+          </button>
+          <button class="btn-sm" onclick="downloadJson()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download JSON
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REDACTION SECTION -->
+  <div class="section-card hidden" id="redact-section" style="animation-delay: 0.35s">
+    <div class="section-header">
+      <div class="section-icon icon-amber">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div>
+        <div class="section-title">Data Redaction</div>
+        <div class="section-subtitle">Sensitive fields are masked in the redacted copy</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="redaction-legend">
+        <div class="legend-item"><div class="legend-dot original"></div> Sensitive field (highlighted)</div>
+        <div class="legend-item"><div class="legend-dot redacted-dot"></div> Redacted in output</div>
+      </div>
+      <div class="redaction-grid">
+        <div class="doc-preview">
+          <div class="doc-preview-header">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Original Document
+          </div>
+          <div class="doc-preview-body" id="originalPreview"></div>
+        </div>
+        <div class="doc-preview">
+          <div class="doc-preview-header" style="background: color-mix(in srgb, var(--green) 10%, transparent);">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Redacted Document
+          </div>
+          <div class="doc-preview-body" id="redactedPreview"></div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" style="font-size:13.5px; padding: 9px 18px;" onclick="downloadRedacted()">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Redacted
+        </button>
+        <button class="btn-sm" onclick="generateHash()">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Generate Hash Key
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RETRIEVE SECTION -->
+  <div class="section-card" id="retrieve-section" style="animation-delay: 0.45s">
+    <div class="section-header">
+      <div class="section-icon icon-purple">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div>
+        <div class="section-title">Secure Document Retrieval</div>
+        <div class="section-subtitle">Both Verification ID and Access Key required</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div style="font-size:13.5px; color:var(--text2); margin-bottom:14px; line-height:1.7;">
+        Enter your <strong style="color:var(--accent)">Verification ID</strong> and <strong style="color:#b45309">Private Access Key</strong> to retrieve stored document data.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+        <div class="retrieve-input-row" style="margin-bottom:0">
+          <input class="retrieve-input" id="retrieveVerifyInput" type="text" placeholder="Verification ID — e.g. VERIFY-AB12CD" spellcheck="false" autocomplete="off" style="text-transform:uppercase;">
+        </div>
+        <div class="retrieve-input-row" style="margin-bottom:0">
+          <input class="retrieve-input" id="retrieveAccessInput" type="text" placeholder="Access Key — e.g. ACCESS-XYZ123ABC" spellcheck="false" autocomplete="off" style="text-transform:uppercase;">
+          <button class="retrieve-btn" onclick="retrieveDocument()">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Retrieve Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Result container -->
+      <div class="retrieve-result-box" id="retrieveResultBox">
+
+        <!-- Status banner -->
+        <div class="retrieve-banner" id="retrieveBanner">
+          <div class="retrieve-banner-icon">
+            <svg id="retrieveBannerIcon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="retrieve-banner-title" id="retrieveBannerTitle"></div>
+            <div class="retrieve-banner-sub" id="retrieveBannerSub"></div>
+          </div>
+        </div>
+
+        <!-- Extracted data panel (shown when found) -->
+        <div id="retrieveDataPanel" style="display:none">
+          <div class="retrieve-data-panel" style="margin-bottom:12px">
+            <div class="retrieve-data-panel-header">
+              <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Extracted Document Data
+            </div>
+            <div style="padding: 14px 14px 6px;">
+              <div id="retrieveIdBadge"></div>
+            </div>
+            <div class="retrieve-data-grid" id="retrieveDataGrid"></div>
+          </div>
+
+          <!-- Immutable ledger block -->
+          <div class="ledger-block" id="retrieveLedgerBlock" style="display:none">
+            <div class="ledger-block-header">
+              <div class="ledger-block-title">
+                <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Immutable Ledger Record
+              </div>
+              <span class="ledger-chain-badge" id="ledgerChainBadge">⛓ Chain Intact</span>
+            </div>
+            <div class="ledger-rows" id="ledgerRows"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- VERIFICATION SECTION -->
+  <div class="section-card" id="verify-section" style="animation-delay: 0.5s">
+    <div class="section-header">
+      <div class="section-icon icon-green">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div class="section-title">Public Verification</div>
+        <div class="section-subtitle">Verify authenticity using only the public Verification ID</div>
+      </div>
+    </div>
+    <div class="section-body">
+      <div style="font-size:13.5px; color:var(--text2); margin-bottom:14px; line-height:1.7;">
+        Enter the <strong style="color:var(--accent)">Verification ID</strong> to check document authenticity and tamper status. No Access Key required — document data is never exposed here.
+      </div>
+      <div class="verify-input-row">
+        <input class="verify-input" id="hashInput" type="text" placeholder="e.g. VERIFY-AB12CD" spellcheck="false" autocomplete="off" style="text-transform:uppercase;">
+        <button class="verify-btn" onclick="verifyHash()">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Verify
+        </button>
+      </div>
+      <div class="verify-result" id="verifyResult">
+        <div class="verify-status-icon" id="verifyStatusIcon">
+          <svg id="verifyCheckIcon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg id="verifyXIcon" viewBox="0 0 24 24" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <div style="flex:1">
+          <div class="verify-result-title" id="verifyTitle"></div>
+          <div class="verify-result-sub" id="verifySub"></div>
+          <div class="verify-meta-row" id="verifyMetaRow" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">PrivSecure</div>
+  <div style="font-size:13px; color:var(--text3); text-align:center;">
+    AI-powered Indian ID verification · Blockchain-secured · Privacy-first
+  </div>
+  <div class="footer-links">
+    <a href="#">Docs</a>
+    <a href="#">Privacy</a>
+    <a href="#">GitHub</a>
+  </div>
+</footer>
+
+<!-- SPINNER -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner-card">
+    <div class="spinner"></div>
+    <div class="spinner-text" id="spinnerText">Processing document...</div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ── STATE ── */
+let currentExtracted = null;
+let currentFileName = null;
+let hashStore = {};
+let docCount = 0;
+// Credential state — stored in memory only, never persisted
+let currentVerificationId = null;
+let currentAccessKey = null;
+let currentUploadTimestamp = null;
+
+/* ── THEME ── */
+const root = document.documentElement;
+const saved = localStorage.getItem('privsecure-theme') || 'light';
+root.setAttribute('data-theme', saved);
+updateThemeIcon(saved);
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const curr = root.getAttribute('data-theme');
+  const next = curr === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('privsecure-theme', next);
+  updateThemeIcon(next);
+});
+
+function updateThemeIcon(theme) {
+  document.getElementById('sunIcon').style.display = theme === 'dark' ? 'block' : 'none';
+  document.getElementById('moonIcon').style.display = theme === 'dark' ? 'none' : 'block';
+}
+
+/* ── DRAG & DROP ── */
+const zone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+zone.addEventListener('click', e => {
+  if (e.target.tagName !== 'SPAN') fileInput.click();
+});
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => /\.(jpg|jpeg|png|pdf|webp)$/i.test(f.name));
+  if (files.length) processFiles(files);
+  else showToast('Unsupported file type. Use JPG, PNG, PDF or WEBP.', 'error');
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) processFiles(Array.from(e.target.files));
+});
+
+/* ── FILE PROCESSING ── */
+function processFiles(files) {
+  const file = files[0];
+  currentFileName = file.name;
+  showProgress();
+  animateProgress(() => {
+    extractData(file);
+  });
+}
+
+function showProgress() {
+  const wrap = document.getElementById('progressWrap');
+  wrap.classList.add('show');
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressPct').textContent = '0%';
+  document.getElementById('progressLabel').textContent = 'Uploading...';
+}
+
+function animateProgress(cb) {
+  let pct = 0;
+  const fill = document.getElementById('progressFill');
+  const pctEl = document.getElementById('progressPct');
+  const labelEl = document.getElementById('progressLabel');
+  const stages = [
+    [20, 'Uploading...'], [45, 'Preprocessing image...'],
+    [65, 'Running OCR engine...'], [85, 'Extracting fields...'], [100, 'Done!']
+  ];
+  let si = 0;
+  const iv = setInterval(() => {
+    if (si < stages.length && pct >= stages[si][0] - 1) {
+      labelEl.textContent = stages[si][1];
+      si++;
+    }
+    pct = Math.min(pct + Math.random() * 5 + 2, 100);
+    fill.style.width = pct + '%';
+    pctEl.textContent = Math.round(pct) + '%';
+    if (pct >= 100) {
+      clearInterval(iv);
+      setTimeout(cb, 300);
+    }
+  }, 80);
+}
+
+/* ── API ENDPOINT — set to your Flask server URL ── */
+const API_BASE = 'http://localhost:5000';
+
+function extractData(file) {
+  showSpinner('Extracting data with AI...');
+  const previewArea = document.getElementById('filePreview');
+  previewArea.classList.add('show');
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  const html = `
+    <div class="file-item">
+      <div class="file-item-icon ${ext === 'pdf' ? 'pdf' : 'img'}">
+        <svg viewBox="0 0 24 24">${ext === 'pdf'
+          ? '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
+          : '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'}
+        </svg>
+      </div>
+      <div class="file-item-info">
+        <div class="file-item-name">${file.name}</div>
+        <div class="file-item-size">${(file.size/1024).toFixed(1)} KB · ${ext.toUpperCase()}</div>
+      </div>
+      <div class="file-item-status status-processing" id="fileStatus">⏳ Processing…</div>
+    </div>`;
+  previewArea.innerHTML = html;
+
+  /* Build multipart form and POST to the Flask API */
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch(`${API_BASE}/api/extract`, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(resp => {
+      hideSpinner();
+
+      if (!resp.success) {
+        document.getElementById('fileStatus').className = 'file-item-status';
+        document.getElementById('fileStatus').style.color = 'var(--red)';
+        document.getElementById('fileStatus').textContent = '✗ Failed';
+        showToast(resp.error || 'Processing failed.', 'error');
+        return;
+      }
+
+      /* Mark file done */
+      document.getElementById('fileStatus').className = 'file-item-status status-done';
+      document.getElementById('fileStatus').textContent = '✓ Processed';
+
+      /* Merge extracted + metadata into one object for renderOCRResult */
+      const data = {
+        ...resp.extracted,
+        _confidence:          resp.confidence,
+        _redacted:            resp.redacted,
+        _verification_id:     resp.verification_id,
+        _access_key:          resp.access_key,
+        _blockchain_verified: resp.blockchain_verified,
+        _storage_status:      resp.storage_status,
+        _verification_status: resp.verification_status,
+      };
+      currentExtracted = data;
+
+      // Store credentials in memory
+      currentVerificationId  = resp.verification_id || null;
+      currentAccessKey       = resp.access_key || null;
+      currentUploadTimestamp = new Date().toISOString();
+
+      /* Pre-fill the verification input */
+      if (resp.verification_id) {
+        document.getElementById('hashInput').value = resp.verification_id;
+        document.getElementById('retrieveVerifyInput').value = resp.verification_id;
+        hashStore[resp.verification_id] = data;
+      }
+
+      // Show credentials warning box
+      if (resp.verification_id && resp.access_key) {
+        document.getElementById('credVerifyId').textContent = resp.verification_id;
+        document.getElementById('credAccessKey').textContent = resp.access_key;
+        document.getElementById('credentialsWarning').classList.add('show');
+      }
+
+      docCount++;
+      document.getElementById('stat-docs').textContent = docCount;
+
+      const skip = new Set(['id_type','source_file','_confidence','_redacted','_validated',
+                            '_hash_key','_blockchain_verified','_storage_status','_verification_status']);
+      const fieldCount = Object.keys(resp.extracted).filter(k => !skip.has(k)).length;
+      document.getElementById('stat-fields').textContent = fieldCount;
+      document.getElementById('stat-acc').textContent = resp.confidence + '%';
+
+      /* Show status log */
+      renderStatusMessages(resp.status_messages || []);
+
+      /* Render blockchain + storage badges below status log */
+      renderBackendStatus(resp);
+
+      renderOCRResult(data);
+      renderRedaction(data);
+      showToast('Document processed successfully!', 'success');
+      document.getElementById('ocr-section').classList.remove('hidden');
+      document.getElementById('redact-section').classList.remove('hidden');
+      setTimeout(() => document.getElementById('ocr-section').scrollIntoView({behavior:'smooth', block:'start'}), 200);
+    })
+    .catch(err => {
+      hideSpinner();
+      document.getElementById('fileStatus').className = 'file-item-status';
+      document.getElementById('fileStatus').style.color = 'var(--red)';
+      document.getElementById('fileStatus').textContent = '✗ Error';
+      showToast('Could not reach the processing server. Is app.py running?', 'error');
+      console.error('API error:', err);
+    });
+}
+
+/* ── STATUS LOG RENDERER ── */
+function renderStatusMessages(messages) {
+  const existingLog = document.getElementById('statusLog');
+  if (existingLog) existingLog.remove();
+
+  if (!messages || messages.length === 0) return;
+
+  const logHtml = `
+    <div id="statusLog" style="
+      margin-top: 16px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden;
+    ">
+      <div style="
+        padding: 9px 14px; background: var(--surface2);
+        border-bottom: 1px solid var(--border);
+        font-size: 11.5px; font-weight: 600; color: var(--text3);
+        text-transform: uppercase; letter-spacing: 0.7px;
+        display: flex; align-items: center; gap: 6px;
+      ">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Processing Log
+      </div>
+      <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+        ${messages.map((m, i) => `
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text2); animation: fadeInUp 0.3s ${i * 0.07}s ease both; opacity: 0;">
+            <span style="color: var(--green); font-size: 11px;">✓</span>
+            ${m}
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('filePreview').insertAdjacentHTML('beforeend', logHtml);
+}
+
+
+/* ── RENDER OCR RESULT ── */
+function renderOCRResult(data) {
+  const typeClasses = {
+    'Aadhaar': 'aadhaar', 'PAN': 'pan',
+    'Driving License': 'dl', 'Voter ID': 'voter',
+    'College ID': 'college'
+  };
+  const cls = typeClasses[data.id_type] || 'other';
+  document.getElementById('idTypeBadge').innerHTML = `
+    <div class="id-type-badge ${cls}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ${data.id_type}
+    </div>`;
+
+  const conf = data._confidence || 90;
+  document.getElementById('confValue').textContent = conf + '%';
+  setTimeout(() => document.getElementById('confFill').style.width = conf + '%', 100);
+
+  const skip = new Set(['id_type', '_confidence', '_error']);
+  const grid = document.getElementById('resultGrid');
+  grid.innerHTML = '';
+  for (const [k, v] of Object.entries(data)) {
+    if (skip.has(k) || v === null || v === undefined) continue;
+    const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    grid.innerHTML += `
+      <div class="result-field">
+        <div class="result-field-label">${label}</div>
+        <div class="result-field-value">${v}</div>
+      </div>`;
+  }
+
+  const clean = Object.fromEntries(Object.entries(data).filter(([k]) => !k.startsWith('_')));
+  document.getElementById('jsonBlock').innerHTML = syntaxHighlight(clean);
+}
+
+function syntaxHighlight(obj) {
+  const str = JSON.stringify(obj, null, 2);
+  return str
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]+)"/g, ': <span class="json-string">"$1"</span>')
+    .replace(/: null/g, ': <span class="json-null">null</span>');
+}
+
+/* ── RENDER REDACTION ── */
+/* Uses server-returned redacted copy (_redacted) for accurate masking.    */
+/* Falls back to client-side masking of known sensitive field names if     */
+/* _redacted is not present (e.g. demo mode).                              */
+function renderRedaction(data) {
+  const redactedCopy = data._redacted || {};
+
+  /* Sensitive field names as returned by the Python redact_sensitive_fields() */
+  const SENSITIVE_KEYS = new Set([
+    'aadhaar_number', 'pan_number', 'phone_number', 'phone',
+    'license_number', 'voter_id_number', 'driving_license_number',
+    'roll_number', 'dob', 'date_of_birth'
+  ]);
+
+  const originalLines = [];
+  const redactedLines = [];
+
+  for (const [k, v] of Object.entries(data)) {
+    if (k.startsWith('_') || v === null || v === undefined) continue;
+    const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const isSensitive = SENSITIVE_KEYS.has(k);
+
+    if (isSensitive) {
+      /* Original: highlight the raw value */
+      originalLines.push(`<strong>${label}:</strong> <span class="highlight-sensitive">${v}</span>`);
+
+      /* Redacted: prefer server-masked value, else black-bar the whole thing */
+      const maskedValue = redactedCopy[k] || '█'.repeat(String(v).length);
+      redactedLines.push(`<strong>${label}:</strong> <span class="redacted">${maskedValue}</span>`);
+    } else {
+      originalLines.push(`<strong>${label}:</strong> ${v}`);
+      redactedLines.push(`<strong>${label}:</strong> ${v}`);
+    }
+  }
+
+  document.getElementById('originalPreview').innerHTML = originalLines.join('<br>');
+  document.getElementById('redactedPreview').innerHTML = redactedLines.join('<br>');
+}
+
+/* ── COPY / DOWNLOAD JSON ── */
+function copyJson() {
+  if (!currentExtracted) return;
+  const clean = Object.fromEntries(Object.entries(currentExtracted).filter(([k]) => !k.startsWith('_')));
+  navigator.clipboard.writeText(JSON.stringify(clean, null, 2)).then(() => {
+    showToast('JSON copied to clipboard!', 'success');
+    const btn = document.getElementById('copyJsonBtn');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy JSON`;
+    }, 2000);
+  });
+}
+
+function downloadJson() {
+  if (!currentExtracted) return;
+  const clean = Object.fromEntries(Object.entries(currentExtracted).filter(([k]) => !k.startsWith('_')));
+  const blob = new Blob([JSON.stringify(clean, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = (currentFileName || 'extracted').replace(/\.[^.]+$/, '') + '_extracted.json';
+  a.click();
+  showToast('JSON downloaded!', 'success');
+}
+
+function downloadRedacted() {
+  const content = document.getElementById('redactedPreview').innerText;
+  const blob = new Blob([content], {type: 'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = (currentFileName || 'doc').replace(/\.[^.]+$/, '') + '_redacted.txt';
+  a.click();
+  showToast('Redacted document downloaded!', 'success');
+}
+
+/* ── HASH GENERATION (server-issued; shown after extraction) ── */
+function generateHash() {
+  const existing = document.getElementById('hashInput').value.trim();
+  if (!existing) {
+    showToast('Process a document first to receive a Verification ID.', 'error');
+    return;
+  }
+  document.getElementById('verify-section').scrollIntoView({behavior:'smooth', block:'start'});
+  showToast(`Verification ID ready: ${existing}`, 'info');
+}
+
+/* ── CREDENTIAL COPY UTILITY ── */
+function copyCredential(elementId, btn) {
+  const text = document.getElementById(elementId).textContent.trim();
+  if (!text || text === '—') return;
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => { btn.innerHTML = original; }, 2000);
+    showToast('Copied to clipboard!', 'success');
+  });
+}
+
+/* ── DOWNLOAD CREDENTIALS ── */
+function downloadCredentials() {
+  if (!currentVerificationId || !currentAccessKey) {
+    showToast('No credentials to download — process a document first.', 'error');
+    return;
+  }
+  const content = [
+    'PrivSecure Document Credentials',
+    '================================',
+    '',
+    `Verification ID : ${currentVerificationId}`,
+    `Access Key      : ${currentAccessKey}`,
+    `Timestamp       : ${currentUploadTimestamp || new Date().toISOString()}`,
+    '',
+    'SECURITY NOTICE:',
+    '  - Your Verification ID is public and safe to share for authenticity checks.',
+    '  - Your Access Key is PRIVATE. Do NOT share it with anyone.',
+    '  - Keep this file secure. The Access Key cannot be recovered.',
+  ].join('\n');
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `privsecure-credentials-${currentVerificationId}.txt`;
+  a.click();
+  showToast('Credentials downloaded!', 'success');
+}
+
+/* ── BACKEND STATUS BADGES ── */
+function renderBackendStatus(resp) {
+  const existing = document.getElementById('backendStatusBadges');
+  if (existing) existing.remove();
+
+  const blockchain = resp.blockchain_verified;
+  const storage    = resp.storage_status || 'local';
+  const verStatus  = resp.verification_status || 'PARTIAL';
+  const verifyId   = resp.verification_id || '—';
+  const tx         = resp.blockchain_tx ? resp.blockchain_tx.slice(0, 18) + '…' : null;
+
+  const badgeHtml = `
+    <div id="backendStatusBadges" style="
+      margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px;
+    ">
+      <span style="
+        padding: 4px 11px; border-radius: 99px; font-weight: 600;
+        background: ${blockchain ? 'var(--green-bg)' : 'var(--surface2)'};
+        color: ${blockchain ? 'var(--green)' : 'var(--text3)'};
+        border: 1px solid ${blockchain ? 'color-mix(in srgb, var(--green) 25%, transparent)' : 'var(--border)'};
+      ">
+        ${blockchain ? '⛓ Ledger Verified' : '⛓ Ledger Unavailable'}
+      </span>
+      <span style="
+        padding: 4px 11px; border-radius: 99px; font-weight: 600;
+        background: var(--accent-bg); color: var(--accent);
+        border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+      ">
+        🗄 Storage: ${storage}
+      </span>
+      <span style="
+        padding: 4px 11px; border-radius: 99px; font-weight: 600;
+        background: ${verStatus === 'VERIFIED' ? 'var(--green-bg)' : 'var(--surface2)'};
+        color: ${verStatus === 'VERIFIED' ? 'var(--green)' : 'var(--text3)'};
+        border: 1px solid ${verStatus === 'VERIFIED' ? 'color-mix(in srgb, var(--green) 25%, transparent)' : 'var(--border)'};
+      ">
+        ${verStatus === 'VERIFIED' ? '✓' : '◑'} ${verStatus}
+      </span>
+      <span style="
+        padding: 4px 11px; border-radius: 99px; font-weight: 500;
+        background: var(--surface2); color: var(--text2);
+        border: 1px solid var(--border); font-family: 'DM Mono', monospace;
+      ">
+        🔑 ${verifyId}
+      </span>
+      ${tx ? `<span style="
+        padding: 4px 11px; border-radius: 99px; font-weight: 500;
+        background: var(--surface2); color: var(--text3);
+        border: 1px solid var(--border); font-family: 'DM Mono', monospace;
+      ">tx: ${tx}</span>` : ''}
+    </div>`;
+
+  document.getElementById('filePreview').insertAdjacentHTML('beforeend', badgeHtml);
+}
+
+/* ── VERIFICATION — calls /api/verify on the Flask backend ── */
+function verifyHash() {
+  const vid = document.getElementById('hashInput').value.trim().toUpperCase();
+  if (!vid) { showToast('Please enter a Verification ID.', 'error'); return; }
+  if (!vid.startsWith('VERIFY-')) { showToast('Verification ID must start with VERIFY-', 'error'); return; }
+
+  showSpinner('Verifying on immutable ledger...');
+
+  fetch(`${API_BASE}/api/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verification_id: vid }),
+  })
+    .then(res => res.json())
+    .then(resp => {
+      hideSpinner();
+      const result = document.getElementById('verifyResult');
+      result.classList.add('show');
+
+      if (!resp.success) {
+        result.className = 'verify-result show not-verified';
+        document.getElementById('verifyCheckIcon').style.display = 'none';
+        document.getElementById('verifyXIcon').style.display = 'block';
+        document.getElementById('verifyTitle').textContent = '✗ Verification Error';
+        document.getElementById('verifySub').textContent = resp.error || 'Verification request failed.';
+        document.getElementById('verifyMetaRow').style.display = 'none';
+        showToast('Verification error.', 'error');
+        return;
+      }
+
+      const verStatus = resp.verification_status || 'NOT_FOUND';
+      const ts        = resp.timestamp
+        ? new Date(resp.timestamp * 1000).toLocaleString('en-IN')
+        : null;
+      const chainIntact = resp.chain_intact !== false;
+
+      // Build meta badges
+      const metaRow = document.getElementById('verifyMetaRow');
+      const badges = [];
+      if (ts) {
+        badges.push(`<span class="verify-meta-badge">🕐 ${ts}</span>`);
+      }
+      badges.push(`<span class="verify-meta-badge ${chainIntact ? 'ok' : 'warn'}">
+        ${chainIntact ? '⛓ Chain Intact' : '⚠ Chain Broken'}
+      </span>`);
+      if (resp.blockchain_record && resp.blockchain_record.exists) {
+        const docName = resp.blockchain_record.document_name || '';
+        if (docName) badges.push(`<span class="verify-meta-badge">📄 ${docName}</span>`);
+      }
+      metaRow.innerHTML = badges.join('');
+      metaRow.style.display = 'flex';
+
+      if (verStatus === 'VERIFIED') {
+        result.className = 'verify-result show verified';
+        document.getElementById('verifyCheckIcon').style.display = 'block';
+        document.getElementById('verifyXIcon').style.display = 'none';
+        document.getElementById('verifyTitle').textContent = '✓ VERIFIED — Document Authentic';
+        document.getElementById('verifySub').textContent =
+          'Data hash matches original · Immutable ledger record confirmed · Chain integrity validated';
+        showToast('Document verified — no tampering detected!', 'success');
+
+      } else if (verStatus === 'TAMPER_DETECTED') {
+        result.className = 'verify-result show tamper';
+        document.getElementById('verifyCheckIcon').style.display = 'none';
+        document.getElementById('verifyXIcon').style.display = 'block';
+        document.getElementById('verifyTitle').textContent = '🚨 TAMPER DETECTED — Data Modified';
+        document.getElementById('verifySub').textContent =
+          'The stored data no longer matches the original hash recorded in the immutable ledger. This document may have been tampered with.';
+        showToast('Tamper detected — data hash mismatch!', 'error');
+
+      } else if (verStatus === 'PARTIAL') {
+        result.className = 'verify-result show verified';
+        document.getElementById('verifyCheckIcon').style.display = 'block';
+        document.getElementById('verifyXIcon').style.display = 'none';
+        document.getElementById('verifyTitle').textContent = '◑ PARTIAL — Found in Storage (No Ledger Record)';
+        document.getElementById('verifySub').textContent =
+          'Data was found in storage but no immutable ledger record exists. The document may predate the ledger or ledger write failed.';
+        showToast('Record found in storage (ledger record missing).', 'info');
+
+      } else {
+        result.className = 'verify-result show not-verified';
+        document.getElementById('verifyCheckIcon').style.display = 'none';
+        document.getElementById('verifyXIcon').style.display = 'block';
+        document.getElementById('verifyTitle').textContent = '✗ NOT FOUND — No Record';
+        document.getElementById('verifySub').textContent =
+          'This Verification ID was not found in any storage backend. The document may be invalid or the ID is incorrect.';
+        showToast('Verification ID not found.', 'error');
+      }
+    })
+    .catch(err => {
+      hideSpinner();
+      showToast('Could not reach verification endpoint. Is app.py running?', 'error');
+      console.error('Verify error:', err);
+    });
+}
+
+/* ── RETRIEVE DOCUMENT — calls /api/retrieve on Flask backend ── */
+function retrieveDocument() {
+  const vid = document.getElementById('retrieveVerifyInput').value.trim().toUpperCase();
+  const key = document.getElementById('retrieveAccessInput').value.trim().toUpperCase();
+
+  if (!vid) { showToast('Please enter your Verification ID.', 'error'); return; }
+  if (!key) { showToast('Please enter your Access Key.', 'error'); return; }
+  if (!vid.startsWith('VERIFY-')) { showToast('Verification ID must start with VERIFY-', 'error'); return; }
+  if (!key.startsWith('ACCESS-')) { showToast('Access Key must start with ACCESS-', 'error'); return; }
+
+  showSpinner('Authenticating and searching storage backends...');
+
+  fetch(`${API_BASE}/api/retrieve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verification_id: vid, access_key: key }),
+  })
+    .then(res => res.json())
+    .then(resp => {
+      hideSpinner();
+      const box    = document.getElementById('retrieveResultBox');
+      const banner = document.getElementById('retrieveBanner');
+      const title  = document.getElementById('retrieveBannerTitle');
+      const sub    = document.getElementById('retrieveBannerSub');
+      const icon   = document.getElementById('retrieveBannerIcon');
+      const panel  = document.getElementById('retrieveDataPanel');
+      box.classList.add('show');
+
+      if (!resp.success) {
+        banner.className = resp.unauthorized ? 'retrieve-banner not-found' : 'retrieve-banner error';
+        icon.setAttribute('viewBox','0 0 24 24');
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+        title.textContent = resp.unauthorized ? '🔒 Unauthorized Access — Invalid Access Key' : 'Retrieval Error';
+        sub.textContent   = resp.error || 'Could not contact the server.';
+        panel.style.display = 'none';
+        showToast(resp.unauthorized ? 'Unauthorized — invalid access key.' : 'Retrieval error.', 'error');
+        return;
+      }
+
+      if (resp.found && resp.data) {
+        // ── Found ──
+        banner.className = 'retrieve-banner found';
+        icon.setAttribute('viewBox','0 0 24 24');
+        icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+        const idType = resp.data.id_type || 'Unknown';
+        title.textContent = `✓ Document Retrieved — ${idType}`;
+
+        const storedOn = resp.stored_on ? `Stored in: ${resp.stored_on}` : '';
+        const ts = resp.timestamp
+          ? ` · Uploaded ${new Date(resp.timestamp * 1000).toLocaleString('en-IN')}`
+          : '';
+        sub.textContent = `${storedOn}${ts}`;
+
+        // ID badge
+        const badgeDiv = document.getElementById('retrieveIdBadge');
+        const cls = { 'Aadhaar':'aadhaar','PAN':'pan','Driving License':'dl','Voter ID':'voter','College ID':'college' }[idType] || 'other';
+        badgeDiv.innerHTML = `<div class="retrieve-id-badge">${idType}</div>`;
+
+        // Data grid
+        const grid  = document.getElementById('retrieveDataGrid');
+        const skip  = new Set(['id_type','source_file','_confidence']);
+        const clean = Object.entries(resp.data).filter(([k,v]) => !k.startsWith('_') && !skip.has(k) && v && v !== 'null');
+        grid.innerHTML = clean.map(([k,v]) => `
+          <div class="retrieve-field">
+            <div class="retrieve-field-label">${k.replace(/_/g,' ')}</div>
+            <div class="retrieve-field-value">${v}</div>
+          </div>`).join('');
+        panel.style.display = 'block';
+
+        // Ledger block
+        const ledgerBlock = document.getElementById('retrieveLedgerBlock');
+        if (resp.blockchain_record && resp.blockchain_record.exists) {
+          const rec  = resp.blockchain_record;
+          const rows = document.getElementById('ledgerRows');
+          const badge = document.getElementById('ledgerChainBadge');
+          badge.textContent = resp.blockchain_verified ? '⛓ Chain Intact' : '⚠ Unverified';
+          badge.className   = 'ledger-chain-badge' + (resp.blockchain_verified ? '' : ' broken');
+          const fmt = v => `<span class="ledger-row-val">${v}</span>`;
+          const fmtGreen = v => `<span class="ledger-row-val green">${v}</span>`;
+          rows.innerHTML = `
+            <div class="ledger-row"><span class="ledger-row-key">Block Index</span>${fmt('#' + rec.block_index)}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Timestamp</span>${fmt(new Date(rec.timestamp * 1000).toLocaleString('en-IN'))}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Document</span>${fmt(rec.document_name || '—')}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Data Hash</span>${fmt(rec.original_data_hash ? rec.original_data_hash.slice(0,32) + '…' : '—')}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Previous Hash</span>${fmt(rec.previous_hash ? rec.previous_hash.slice(0,32) + '…' : '—')}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Block Hash</span>${fmt(rec.current_hash ? rec.current_hash.slice(0,32) + '…' : '—')}</div>
+            <div class="ledger-row"><span class="ledger-row-key">Chain Status</span>${resp.blockchain_verified ? fmtGreen('✓ Verified — tamper-resistant') : fmt('⚠ Not in ledger')}</div>`;
+          ledgerBlock.style.display = 'block';
+        } else {
+          document.getElementById('retrieveLedgerBlock').style.display = 'none';
+        }
+
+        showToast('Document retrieved successfully!', 'success');
+
+      } else {
+        // ── Not found ──
+        banner.className = 'retrieve-banner not-found';
+        icon.setAttribute('viewBox','0 0 24 24');
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+        title.textContent = '✗ No Document Found';
+        sub.textContent   = 'This Verification ID was not found in any storage backend.';
+        panel.style.display = 'none';
+        showToast('No document found for this Verification ID.', 'error');
+      }
+    })
+    .catch(err => {
+      hideSpinner();
+      showToast('Could not reach retrieval endpoint. Is app.py running?', 'error');
+      console.error('Retrieve error:', err);
+    });
+}
+
+/* ── SPINNER ── */
+function showSpinner(text) {
+  document.getElementById('spinnerText').textContent = text || 'Processing...';
+  document.getElementById('spinnerOverlay').classList.add('show');
+}
+function hideSpinner() {
+  document.getElementById('spinnerOverlay').classList.remove('show');
+}
+
+/* ── TOAST ── */
+function showToast(msg, type = 'info') {
+  const icons = {
+    success: '<polyline points="20 6 9 17 4 12"/>',
+    error: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+  };
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<svg viewBox="0 0 24 24">${icons[type]}</svg> ${msg}`;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(20px)';
+    t.style.transition = '0.3s ease';
+    setTimeout(() => t.remove(), 320);
+  }, 3200);
+}
+
+/* ── INTERSECTION OBSERVER for cards ── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.section-card, .stats-row').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(18px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
