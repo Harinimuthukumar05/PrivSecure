@@ -22,8 +22,6 @@ pdf2image
 # OCR fallback
 pytesseract
 
-# Aadhaar validation
-verhoeff
 
 # Firebase
 firebase-admin

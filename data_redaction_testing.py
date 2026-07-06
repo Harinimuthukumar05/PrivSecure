@@ -15,7 +15,9 @@
 # pip install opencv-python
 # pip install numpy==1.26.4
 # pip install pytesseract
-# pip install verhoeff
+#
+# NOTE: Verhoeff checksum validation is implemented natively in this file
+# (see the VERHOEFF ALGORITHM section below) — no external package needed.
 #
 # TESSERACT INSTALL:
 # ------------------
@@ -153,16 +155,70 @@ except ImportError:
     TESSERACT_AVAILABLE = False
     logger.warning("pytesseract not installed. Tesseract PAN fallback disabled.")
 
-try:
-    from verhoeff import validateVerhoeff
-    VERHOEFF_AVAILABLE = True
-except ImportError:
-    VERHOEFF_AVAILABLE = False
-    logger.warning(
-        "verhoeff package not installed. "
-        "Aadhaar checksum validation disabled. "
-        "Run: pip install verhoeff"
-    )
+# =============================================================================
+# VERHOEFF ALGORITHM (pure Python, no external dependency)
+# =============================================================================
+#
+# This is a self-contained implementation of the Verhoeff checksum algorithm,
+# used to validate 12-digit Aadhaar numbers. It replaces the third-party
+# `verhoeff` PyPI package (which is not published on PyPI and therefore
+# broke deployment on Render). The multiplication (d), permutation (p), and
+# inverse (inv) tables below are the standard, publicly documented Verhoeff
+# tables — the same ones the reference algorithm and UIDAI use.
+
+_VERHOEFF_D_TABLE = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+    [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+    [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+    [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+    [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+    [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+    [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+    [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+    [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+]
+
+_VERHOEFF_P_TABLE = [
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+    [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+    [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+    [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+    [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+    [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+    [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+]
+
+_VERHOEFF_INV_TABLE = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9]
+
+
+def validateVerhoeff(number) -> bool:
+    """
+    Pure-Python drop-in replacement for `verhoeff.validateVerhoeff`.
+
+    Validates a numeric string (e.g. a 12-digit Aadhaar number, where the
+    final digit is the Verhoeff check digit) and returns True if the
+    checksum is valid, False otherwise. Behaves the same as the original
+    third-party function: same name, same input (a string/int of digits),
+    same boolean return value.
+    """
+    num_str = str(number)
+
+    if not num_str.isdigit():
+        return False
+
+    checksum = 0
+    for i, char in enumerate(reversed(num_str)):
+        digit = int(char)
+        checksum = _VERHOEFF_D_TABLE[checksum][_VERHOEFF_P_TABLE[i % 8][digit]]
+
+    return checksum == 0
+
+
+# The native implementation above is always available (no optional import),
+# so Verhoeff validation is never skipped due to a missing dependency.
+VERHOEFF_AVAILABLE = True
 
 PYMUPDF_AVAILABLE = False
 
