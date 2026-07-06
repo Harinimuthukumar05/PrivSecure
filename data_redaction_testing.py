@@ -2760,28 +2760,7 @@ if __name__ == "__main__":
         sys.exit(1)
         raise TypeError(f"Unsupported image type: {type(image_input)}")
 
-    logger.info(f"Original image size: {img.shape[1]}x{img.shape[0]}")
-
-    h, w = img.shape[:2]
-    img = cv2.resize(
-        img,
-        (w * UPSCALE_FACTOR, h * UPSCALE_FACTOR),
-        interpolation=cv2.INTER_CUBIC
-    )
-    logger.info(f"Upscaled to: {img.shape[1]}x{img.shape[0]}")
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    gray = clahe.apply(gray)
-
-    gray = cv2.GaussianBlur(gray, (3, 3), 0)
-
-    blurred = cv2.GaussianBlur(gray, (0, 0), 3)
-    gray = cv2.addWeighted(gray, 1.5, blurred, -0.5, 0)
-
-    result = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-    return result
+    
 
 
 # =============================================================================
