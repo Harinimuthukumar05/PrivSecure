@@ -18,6 +18,7 @@ import os
 import json
 import tempfile
 import logging
+from flask_cors import CORS
 from pathlib import Path
 
 from flask import Flask, request, jsonify, send_from_directory
