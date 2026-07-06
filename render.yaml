@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: privsecure
+    env: python
+
+    buildCommand: |
+      pip install -r requirements.txt
+      apt-get update
+      apt-get install -y tesseract-ocr
+      apt-get install -y poppler-utils
+
+    startCommand: gunicorn app:app

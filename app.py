@@ -118,6 +118,7 @@ def api_extract():
         file.save(tmp_path)
 
     try:
+        print("EXTRACT API HIT")
         logger.info(f"Processing upload: {file.filename} → {tmp_path}")
         status_messages = ["File received and saved"]
 
@@ -204,6 +205,8 @@ def api_extract():
 
     except Exception as e:
         logger.exception(f"Pipeline error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": f"Processing failed: {str(e)}"}), 500
 
     finally:
