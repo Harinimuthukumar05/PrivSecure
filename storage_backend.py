@@ -88,35 +88,52 @@ except ImportError:
 #
 # NOTE: access_key is intentionally NOT stored in the ledger —
 # the ledger is public/auditable; the access_key must stay private.
+#
+# STORAGE:
+# The ledger is stored in Firebase Realtime Database under:
+#   ledger/
+#       block_0
+#       block_1
+#       block_2
+#       ...
+# This replaces the previous local blockchain_ledger.json file, which
+# did not survive Railway's ephemeral filesystem across deployments.
 # ============================================================
 
-LEDGER_FILE = "blockchain_ledger.json"
+LEDGER_ROOT = "ledger"
 _GENESIS_PREVIOUS_HASH = "0" * 64
 
 
 def _load_ledger() -> list[dict]:
-    """Load the full ledger from disk. Returns [] if not yet created."""
-    if not os.path.exists(LEDGER_FILE):
+    """Load the full ledger from Firebase. Returns [] if not yet created."""
+    if not firebase_enabled or fb_db is None:
+        logger.error("❌ Firebase not available — cannot load ledger.")
         return []
     try:
-        with open(LEDGER_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, list) else []
-    except (json.JSONDecodeError, OSError) as e:
-        logger.error(f"❌ Could not read ledger: {e}")
+        raw = fb_db.child(LEDGER_ROOT).get()
+        if not raw or not isinstance(raw, dict):
+            return []
+        blocks = [block for block in raw.values() if isinstance(block, dict)]
+        blocks.sort(key=lambda b: b.get("block_index", 0))
+        return blocks
+    except Exception as e:
+        logger.error(f"❌ Could not read ledger from Firebase: {e}")
         return []
 
 
 def _save_ledger(chain: list[dict]) -> bool:
-    """Persist the ledger to disk atomically (write-then-rename)."""
-    tmp_path = LEDGER_FILE + ".tmp"
+    """Persist the full ledger to Firebase under ledger/block_<index>."""
+    if not firebase_enabled or fb_db is None:
+        logger.error("❌ Firebase not available — cannot write ledger.")
+        return False
     try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(chain, f, indent=2, ensure_ascii=False)
-        os.replace(tmp_path, LEDGER_FILE)
+        ledger_data = {
+            f"block_{block['block_index']}": block for block in chain
+        }
+        fb_db.child(LEDGER_ROOT).set(ledger_data)
         return True
-    except OSError as e:
-        logger.error(f"❌ Could not write ledger: {e}")
+    except Exception as e:
+        logger.error(f"❌ Could not write ledger to Firebase: {e}")
         return False
 
 
@@ -207,7 +224,7 @@ def get_blockchain_status() -> dict:
     chain = _load_ledger()
     return {
         "type":         "blockchain-inspired immutable ledger",
-        "ledger_file":  LEDGER_FILE,
+        "ledger_file":  f"firebase:/{LEDGER_ROOT}",
         "block_count":  len(chain),
         "chain_intact": _verify_chain_integrity(chain),
         "connected":    True,
