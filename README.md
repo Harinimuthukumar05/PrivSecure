@@ -184,18 +184,6 @@ The application is deployed on Railway.
 
 ---
 
-# 📸 Screenshots
-
-> Add screenshots of:
-
-- Home Page
-- Upload Document
-- Redacted Output
-- Verification Page
-- Firebase Database
-
----
-
 # 🚀 Future Improvements
 
 - Multi-user authentication
@@ -216,7 +204,7 @@ AI Integration
 Firebase Integration
 Cloud Deployment
 
-**<Friend Name>**
+**Arul M**
 
 Frontend Development
 UI/UX
