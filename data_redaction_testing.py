@@ -5,8 +5,7 @@
 #
 # REQUIRED PIP INSTALLS (run these in your terminal first):
 # ---------------------------------------------------------
-# pip install paddlepaddle==2.6.2
-# pip install paddleocr==2.7.3
+# pip install requests
 # pip install groq
 # pip install python-dotenv
 # pip install pymupdf
@@ -15,6 +14,11 @@
 # pip install opencv-python
 # pip install numpy==1.26.4
 # pip install pytesseract
+#
+# NOTE: OCR is performed via the OCR.space API (lightweight, deployment-
+# friendly — replaces the previous PaddleOCR/PaddlePaddle implementation,
+# which was too large for constrained deployment targets like Railway).
+# Set OCR_SPACE_API_KEY in your .env file (see below).
 #
 # NOTE: Verhoeff checksum validation is implemented natively in this file
 # (see the VERHOEFF ALGORITHM section below) — no external package needed.
@@ -31,7 +35,6 @@
 #   - pdf2image requires poppler. Download from:
 #     https://github.com/oschwartz10612/poppler-windows/releases
 #     Extract and add the `bin` folder to your Windows PATH.
-#   - PaddleOCR may need Visual C++ Redistributable installed.
 #
 # VS CODE SETUP:
 # --------------
@@ -49,8 +52,10 @@
 # Create a file named `.env` in the same folder as this script:
 #
 #   GROQ_API_KEY=your_groq_api_key_here
+#   OCR_SPACE_API_KEY=your_ocr_space_api_key_here
 #
 # Get your free Groq API key at: https://console.groq.com
+# Get your free OCR.space API key at: https://ocr.space/ocrapi
 #
 # HOW TO RUN:
 # -----------
@@ -71,7 +76,7 @@
 #       ↓
 #   Multiple Preprocessing Variants
 #       ↓
-#   PaddleOCR (multiple passes)
+#   OCR.space API (multiple passes)
 #       ↓
 #   OCR Deduplication
 #       ↓
@@ -104,6 +109,7 @@ import re
 import json
 import logging
 import tempfile
+import requests
 import cv2
 import numpy as np
 from pathlib import Path
@@ -132,12 +138,6 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # LAZY IMPORTS
 # =============================================================================
-
-try:
-    from paddleocr import PaddleOCR
-except ImportError:
-    logger.error("PaddleOCR not installed. Run: pip install paddleocr==2.7.3")
-    raise
 
 try:
     from groq import Groq
@@ -244,6 +244,17 @@ if not GROQ_API_KEY:
         "GROQ_API_KEY not found. Create a .env file with:\n  GROQ_API_KEY=your_key_here"
     )
 
+# OCR.space API key (read from environment — never hardcoded)
+OCR_SPACE_API_KEY = os.getenv("OCR_SPACE_API_KEY", "")
+if not OCR_SPACE_API_KEY:
+    raise EnvironmentError(
+        "OCR_SPACE_API_KEY not found. Create a .env file with:\n  OCR_SPACE_API_KEY=your_key_here"
+    )
+
+OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image"
+OCR_SPACE_ENGINE = "2"  # OCR Engine 2 — better accuracy for small/dense text (PAN, Aadhaar)
+OCR_SPACE_TIMEOUT = 60  # seconds
+
 # OCR confidence threshold — lowered for PAN cards with tiny text
 OCR_CONFIDENCE_THRESHOLD = 0.25
 
@@ -349,25 +360,7 @@ DL_STRONG_KEYWORDS = {
 # GLOBAL INITIALIZER — called once, cached
 # =============================================================================
 
-_ocr_engine = None
 _groq_client = None
-
-
-def get_ocr_engine() -> "PaddleOCR":
-    """Initialize PaddleOCR once and reuse across calls."""
-    global _ocr_engine
-    if _ocr_engine is None:
-        logger.info("Initializing PaddleOCR engine...")
-        _ocr_engine = PaddleOCR(
-            use_angle_cls=False,
-            lang="en",
-            use_gpu=False,
-            show_log=False,
-            rec_batch_num=1,
-            cpu_threads=1,
-        )
-        logger.info("PaddleOCR ready.")
-    return _ocr_engine
 
 
 def get_groq_client() -> "Groq":
@@ -511,43 +504,144 @@ def deduplicate_ocr_lines(lines: list[dict]) -> list[dict]:
 
 
 # =============================================================================
-# OCR RUNNER
+# OCR RUNNER — OCR.space API
 # =============================================================================
+
+def _ocr_space_upload(image_array: np.ndarray) -> dict:
+    """
+    Upload a single preprocessed image (in-memory, as PNG bytes) to the
+    OCR.space API and return the raw parsed JSON response.
+
+    Uses OCR Engine 2 with the text overlay enabled so per-line bounding
+    boxes can be reconstructed downstream (needed by the spatial Aadhaar
+    name-extraction heuristic).
+    """
+    success, buffer = cv2.imencode(".png", image_array)
+    if not success:
+        logger.error("[ocr.space] Failed to encode image for upload.")
+        return {}
+
+    files = {"file": ("image.png", buffer.tobytes(), "image/png")}
+    data = {
+        "apikey": OCR_SPACE_API_KEY,
+        "language": "eng",
+        "isOverlayRequired": "true",
+        "OCREngine": OCR_SPACE_ENGINE,
+        "scale": "true",
+        "detectOrientation": "false",
+    }
+
+    try:
+        response = requests.post(
+            OCR_SPACE_ENDPOINT, files=files, data=data, timeout=OCR_SPACE_TIMEOUT
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"[ocr.space] Request failed: {e}")
+        return {}
+
+
+def ocr_space_extract(image_array: np.ndarray) -> list[dict]:
+    """
+    Run OCR.space on a preprocessed image and return OCR lines in the same
+    structured format previously produced by PaddleOCR:
+
+        [{"text": str, "confidence": float, "bbox": [[x,y],[x,y],[x,y],[x,y]]}, ...]
+
+    Notes:
+    - OCR.space does not return a per-line confidence score. Every line
+      that OCR.space itself accepted is assigned a fixed high confidence
+      (0.99) so it passes the existing OCR_CONFIDENCE_THRESHOLD filter
+      unchanged — the threshold check in run_ocr() is preserved as-is.
+    - bbox is reconstructed as a 4-point polygon (top-left, top-right,
+      bottom-right, bottom-left) from OCR.space's overlay Left/Top/Width/
+      Height fields, matching the polygon shape the rest of the pipeline
+      (sorting, spatial name extraction) already expects.
+    """
+    payload = _ocr_space_upload(image_array)
+    if not payload:
+        return []
+
+    if payload.get("IsErroredOnProcessing"):
+        logger.error(f"[ocr.space] Processing error: {payload.get('ErrorMessage')}")
+        return []
+
+    parsed_results = payload.get("ParsedResults") or []
+    if not parsed_results:
+        return []
+
+    lines_out: list[dict] = []
+
+    for result in parsed_results:
+        overlay = result.get("TextOverlay") or {}
+        overlay_lines = overlay.get("Lines") or []
+
+        if overlay_lines:
+            for line in overlay_lines:
+                text = line.get("LineText", "")
+                if not text:
+                    continue
+
+                words = line.get("Words") or []
+                if words:
+                    left = min(w["Left"] for w in words)
+                    top = min(w["Top"] for w in words)
+                    right = max(w["Left"] + w["Width"] for w in words)
+                    bottom = max(w["Top"] + w["Height"] for w in words)
+                else:
+                    left = top = right = bottom = 0.0
+
+                bbox = [
+                    [left, top],
+                    [right, top],
+                    [right, bottom],
+                    [left, bottom],
+                ]
+
+                lines_out.append({
+                    "text": text,
+                    "confidence": 0.99,
+                    "bbox": bbox,
+                })
+        else:
+            # Overlay unavailable for this result — fall back to plain
+            # parsed text, one synthetic line per non-empty text line.
+            parsed_text = result.get("ParsedText", "") or ""
+            for raw_line in parsed_text.splitlines():
+                raw_line = raw_line.strip()
+                if raw_line:
+                    lines_out.append({
+                        "text": raw_line,
+                        "confidence": 0.99,
+                        "bbox": [[0, 0], [0, 0], [0, 0], [0, 0]],
+                    })
+
+    return lines_out
+
 
 def run_ocr(image_array: np.ndarray) -> list[dict]:
     """
-    Run PaddleOCR on a preprocessed image.
+    Run OCR.space on a preprocessed image.
 
     Returns:
         List of dicts: [{"text": str, "confidence": float, "bbox": list}]
     """
-    engine = get_ocr_engine()
-    ocr_result = engine.ocr(image_array)
+    extracted = ocr_space_extract(image_array)
 
-    extracted = []
-    if not ocr_result:
-        return extracted
+    filtered = []
+    for line in extracted:
+        text = line["text"]
+        conf = line["confidence"]
 
-    for block in ocr_result:
-        if not block:
-            continue
-        for line in block:
-            bbox = line[0]
-            text = line[1][0]
-            conf = line[1][1]
+        logger.debug(f"OCR line: '{text}' (conf={conf:.2f})")
 
-            logger.debug(f"OCR line: '{text}' (conf={conf:.2f})")
+        if conf >= OCR_CONFIDENCE_THRESHOLD:
+            filtered.append(line)
+        else:
+            logger.debug(f"  → Discarded (conf={conf:.2f} < {OCR_CONFIDENCE_THRESHOLD})")
 
-            if conf >= OCR_CONFIDENCE_THRESHOLD:
-                extracted.append({
-                    "text": text,
-                    "confidence": conf,
-                    "bbox": bbox
-                })
-            else:
-                logger.debug(f"  → Discarded (conf={conf:.2f} < {OCR_CONFIDENCE_THRESHOLD})")
-
-    return extracted
+    return filtered
 
 
 def ocr_lines_to_text(ocr_lines: list[dict]) -> str:
@@ -577,11 +671,11 @@ def ocr_lines_to_text(ocr_lines: list[dict]) -> str:
 
 def tesseract_pan_ocr(img: np.ndarray) -> str:
     """
-    Tesseract fallback OCR, used ONLY when PaddleOCR fails to detect a PAN
+    Tesseract fallback OCR, used ONLY when OCR.space fails to detect a PAN
     number on a PAN card.
 
     Tesseract with --psm 6 (assume uniform block of text) often handles
-    small, densely-packed PAN text better than PaddleOCR in some cases.
+    small, densely-packed PAN text better than OCR.space in some cases.
 
     Returns:
         Raw OCR text string, or empty string if Tesseract is unavailable.
@@ -1419,7 +1513,7 @@ def extract_aadhaar_name(ocr_lines: list[dict]) -> str | None:
 
     Args:
         ocr_lines: List of OCR line dicts with keys ``text`` and ``bbox``
-                   (standard PaddleOCR / run_ocr() output format).
+                   (standard run_ocr() / OCR.space output format).
 
     Returns:
         Extracted holder name string, or None if no confident match found.
@@ -1649,7 +1743,7 @@ def extract_regex_data(
     elif id_type == "PAN":
         corrected_pan = correct_pan_candidates(upper_text)
 
-        # Tesseract fallback when PaddleOCR misses the PAN
+        # Tesseract fallback when OCR.space misses the PAN
         if not corrected_pan and preprocessed_image is not None:
             logger.info("Trying Tesseract PAN fallback...")
             try:
@@ -2103,7 +2197,7 @@ def score_extraction(
 
     Two components:
     1. Field coverage score (0.0–1.0): fraction of expected fields filled.
-    2. OCR mean confidence (0.0–1.0): average PaddleOCR line confidence.
+    2. OCR mean confidence (0.0–1.0): average OCR.space line confidence.
 
     Final score = 0.7 × field_coverage + 0.3 × ocr_confidence
     """
@@ -2205,7 +2299,7 @@ def extract_id_data(file_path: str) -> dict:
     Steps:
      1.  Load image or PDF
      2.  Generate multiple preprocessing variants
-     3.  Run PaddleOCR on each variant
+     3.  Run OCR.space on each variant
      4.  Deduplicate OCR lines
      5.  Filter OCR noise lines
      6.  Sort and join to text

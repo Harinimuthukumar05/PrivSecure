@@ -45,9 +45,22 @@ try:
     import firebase_admin
     from firebase_admin import credentials, db as firebase_db_module
 
-    if pathlib.Path(SERVICE_ACCOUNT_PATH).exists():
+    firebase_credentials_env = os.getenv("FIREBASE_CREDENTIALS")
+
+    cred = None
+    if firebase_credentials_env:
         try:
-            cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+            parsed_json = json.loads(firebase_credentials_env.strip())
+            cred = credentials.Certificate(parsed_json)
+        except Exception as e:
+            logger.error(f"❌ Failed to parse FIREBASE_CREDENTIALS: {e}")
+    elif pathlib.Path(SERVICE_ACCOUNT_PATH).exists():
+        cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+    else:
+        logger.warning("⚠️ serviceAccountKey.json not found — using local JSON storage.")
+
+    if cred is not None:
+        try:
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(cred, {"databaseURL": DATABASE_URL})
             fb_db = firebase_db_module.reference("/")
@@ -55,8 +68,6 @@ try:
             logger.info("✅ Firebase connected")
         except Exception as e:
             logger.error(f"❌ Firebase init failed: {e}")
-    else:
-        logger.warning("⚠️ serviceAccountKey.json not found — using local JSON storage.")
 except ImportError:
     logger.warning("⚠️ firebase_admin not installed — using local JSON storage.")
 

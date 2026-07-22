@@ -3,9 +3,8 @@ Flask
 flask-cors
 gunicorn
 
-# OCR
-paddlepaddle==2.6.2
-paddleocr==2.7.3
+# OCR (OCR.space API client)
+requests
 
 # LLM
 groq
